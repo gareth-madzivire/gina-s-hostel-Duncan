@@ -627,7 +627,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
   // ===== SUPABASE CONFIGURATION =====
   const SUPABASE_URL = 'https://lfnpairvlaqawpnjszwt.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmbnBhaXJ2bGFxYXdwbmpzend0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwODU1NTksImV4cCI6MjA4NjY2MTU1OX0.36pRAxOrTTt1f2WWnSh2c-j3wB8KFBRLhnc3QL5J7C0';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // ===== ROOM DEFINITIONS =====
   const ROOMS = [
@@ -703,16 +703,16 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
         { data: water },
         { data: notices }
       ] = await Promise.all([
-        supabase.from('residents').select('*'),
-        supabase.from('checkins').select('*'),
-        supabase.from('checkouts').select('*'),
-        supabase.from('rulesAcceptance').select('*'),
-        supabase.from('payments').select('*'),
-        supabase.from('incidents').select('*'),
-        supabase.from('maintenance').select('*'),
-        supabase.from('power').select('*'),
-        supabase.from('water').select('*'),
-        supabase.from('notices').select('*')
+        supabaseClient.from('residents').select('*'),
+        supabaseClient.from('checkins').select('*'),
+        supabaseClient.from('checkouts').select('*'),
+        supabaseClient.from('rulesAcceptance').select('*'),
+        supabaseClient.from('payments').select('*'),
+        supabaseClient.from('incidents').select('*'),
+        supabaseClient.from('maintenance').select('*'),
+        supabaseClient.from('power').select('*'),
+        supabaseClient.from('water').select('*'),
+        supabaseClient.from('notices').select('*')
       ]);
 
       DB.residents = residents || [];
@@ -771,7 +771,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
     });
   }
   setupTabs('resNavPills','res-tab');
-  console.log('Tab setup complete');
+  console.log('Tab setup complete'); // <-- ADDED FOR DEBUGGING
 
   // ===== ROOM SELECT POPULATION =====
   function getRoomOptions() {
@@ -809,7 +809,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       createdAt: now()
     };
 
-    const { data: newCheckin, error: ciError } = await supabase.from('checkins').insert(data).select().single();
+    const { data: newCheckin, error: ciError } = await supabaseClient.from('checkins').insert(data).select().single();
     if (ciError) { toast('Error saving check-in: '+ciError.message, 'err'); return false; }
     DB.checkins.push(newCheckin);
 
@@ -827,7 +827,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
         notes: data.notes,
         createdAt: now()
       };
-      const { data: newResident, error: resError } = await supabase.from('residents').insert(residentData).select().single();
+      const { data: newResident, error: resError } = await supabaseClient.from('residents').insert(residentData).select().single();
       if (resError) { toast('Error saving resident: '+resError.message, 'err'); return false; }
       DB.residents.push(newResident);
     } else {
@@ -837,7 +837,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
         checkinDate: data.date,
         paymentStatus: data.deposit
       };
-      const { error: updError } = await supabase.from('residents').update(updates).eq('id', existing.id);
+      const { error: updError } = await supabaseClient.from('residents').update(updates).eq('id', existing.id);
       if (updError) { toast('Error updating resident: '+updError.message, 'err'); return false; }
       Object.assign(existing, updates);
     }
@@ -858,7 +858,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       acceptedAt: now(),
       version: 'Rules v1.0'
     };
-    const { data: newRule, error } = await supabase.from('rulesAcceptance').insert(data).select().single();
+    const { data: newRule, error } = await supabaseClient.from('rulesAcceptance').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.rulesAcceptance.push(newRule);
     addActivity('Rules accepted by '+data.name);
@@ -878,7 +878,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       status: 'Open',
       createdAt: now()
     };
-    const { data: newMaint, error } = await supabase.from('maintenance').insert(data).select().single();
+    const { data: newMaint, error } = await supabaseClient.from('maintenance').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.maintenance.push(newMaint);
     addActivity('Maintenance request from '+data.name+': '+data.category);
@@ -900,7 +900,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       createdAt: now(),
       closedAt: null
     };
-    const { data: newInc, error } = await supabase.from('incidents').insert(data).select().single();
+    const { data: newInc, error } = await supabaseClient.from('incidents').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.incidents.push(newInc);
     addActivity('Incident reported by '+data.submittedBy+': '+data.type);
@@ -921,13 +921,13 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       forwardContact: document.getElementById('co_forward').value.trim(),
       createdAt: now()
     };
-    const { data: newCheckout, error } = await supabase.from('checkouts').insert(data).select().single();
+    const { data: newCheckout, error } = await supabaseClient.from('checkouts').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.checkouts.push(newCheckout);
 
     var res = DB.residents.find(r => r.room === data.room && r.name.toLowerCase() === data.name.toLowerCase());
     if (res) {
-      const { error: updError } = await supabase.from('residents').update({ room: '' }).eq('id', res.id);
+      const { error: updError } = await supabaseClient.from('residents').update({ room: '' }).eq('id', res.id);
       if (!updError) res.room = '';
     }
 
@@ -963,7 +963,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
     }
     var val = document.getElementById('adminPin').value;
 
-    const { data, error } = await supabase.from('config').select('pin_hash').eq('id', 1).single();
+    const { data, error } = await supabaseClient.from('config').select('pin_hash').eq('id', 1).single();
     if (error || !data) {
       toast('Config error: '+ (error?.message || 'PIN not set'), 'err');
       return false;
@@ -1088,7 +1088,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
 
   async function removeResident(id) {
     showConfirm('Remove Resident','Are you sure you want to remove this resident?', async ()=>{
-      const { error } = await supabase.from('residents').delete().eq('id', id);
+      const { error } = await supabaseClient.from('residents').delete().eq('id', id);
       if (error) { toast('Error: '+error.message, 'err'); return; }
       DB.residents = DB.residents.filter(r=>r.id!==id);
       addActivity('Resident removed');
@@ -1113,7 +1113,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       notes: '',
       createdAt: now()
     };
-    const { data: newRes, error } = await supabase.from('residents').insert(data).select().single();
+    const { data: newRes, error } = await supabaseClient.from('residents').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.residents.push(newRes);
     addActivity('Resident added: '+data.name+' → '+getRoomName(roomId));
@@ -1177,7 +1177,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       paidDate: now(),
       recordedBy: 'Admin'
     };
-    const { data: newPay, error } = await supabase.from('payments').insert(data).select().single();
+    const { data: newPay, error } = await supabaseClient.from('payments').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.payments.push(newPay);
     addActivity('Payment: $'+data.amount+' from '+data.name);
@@ -1208,7 +1208,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       balance: document.getElementById('pw_balance').value,
       notes: document.getElementById('pw_notes').value.trim()
     };
-    const { data: newPower, error } = await supabase.from('power').insert(data).select().single();
+    const { data: newPower, error } = await supabaseClient.from('power').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.power.push(newPower);
     addActivity('Electricity recharge: '+data.units+' units');
@@ -1228,7 +1228,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       filled: document.getElementById('wt_filled').value,
       notes: document.getElementById('wt_notes').value.trim()
     };
-    const { data: newWater, error } = await supabase.from('water').insert(data).select().single();
+    const { data: newWater, error } = await supabaseClient.from('water').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.water.push(newWater);
     addActivity('Water delivery: '+data.litres+'L');
@@ -1269,7 +1269,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
     var updates = { status: newStatus };
     if (newStatus === 'Closed') updates.closedAt = now();
     else updates.closedAt = null;
-    const { error } = await supabase.from('incidents').update(updates).eq('id', id);
+    const { error } = await supabaseClient.from('incidents').update(updates).eq('id', id);
     if (error) { toast('Error: '+error.message, 'err'); return; }
     i.status = newStatus;
     i.closedAt = updates.closedAt;
@@ -1292,7 +1292,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
       priority: document.getElementById('nt_priority').value,
       createdAt: now()
     };
-    const { data: newNotice, error } = await supabase.from('notices').insert(data).select().single();
+    const { data: newNotice, error } = await supabaseClient.from('notices').insert(data).select().single();
     if (error) { toast('Error: '+error.message, 'err'); return false; }
     DB.notices.unshift(newNotice);
     addActivity('Notice posted: '+data.title);
@@ -1305,7 +1305,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
   }
   async function removeNotice(id) {
     showConfirm('Remove Notice','Are you sure you want to remove this notice?', async ()=>{
-      const { error } = await supabase.from('notices').delete().eq('id', id);
+      const { error } = await supabaseClient.from('notices').delete().eq('id', id);
       if (error) { toast('Error: '+error.message, 'err'); return; }
       DB.notices = DB.notices.filter(n=>n.id!==id);
       renderAdminNotices();
@@ -1330,7 +1330,7 @@ html.dark .badge-pri{background:rgba(74,222,128,.15)}
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    const { error } = await supabase.from('config').update({ pin_hash: hashHex }).eq('id', 1);
+    const { error } = await supabaseClient.from('config').update({ pin_hash: hashHex }).eq('id', 1);
     if (error) { toast('Error updating PIN: '+error.message, 'err'); return; }
     toast('Password updated successfully');
     addActivity('Admin password changed');
