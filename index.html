@@ -150,7 +150,7 @@ html.dark .badge-info{background:rgba(37,99,235,.2)}
 </div>
 <div class="toast-container" id="toasts"></div>
 
-<!-- ===== RESIDENT PORTAL ===== -->
+<!-- ===== RESIDENT PORTAL (unchanged) ===== -->
 <div id="residentPortal" class="container section active">
   <nav class="nav-pills" id="resNavPills">
     <button class="pill active" data-tab="res-checkin"><i class="fas fa-right-to-bracket"></i> Check-In</button>
@@ -468,7 +468,7 @@ html.dark .badge-info{background:rgba(37,99,235,.2)}
       </div>
     </div>
 
-    <!-- SETTINGS -->
+    <!-- SETTINGS (updated SQL) -->
     <div id="adm-settings" class="adm-tab fade-in" style="display:none">
       <div class="card">
         <div class="card-h"><i class="fas fa-shield-halved"></i> Security Settings</div>
@@ -487,6 +487,7 @@ html.dark .badge-info{background:rgba(37,99,235,.2)}
             <li>Input sanitization: all user inputs escaped against XSS</li>
             <li>Honeypot fields: spam protection on public forms</li>
             <li>Audit trail: all admin actions logged with timestamps</li>
+            <li><strong>Row Level Security enforced:</strong> only authenticated users can access data</li>
           </ul>
         </div>
       </div>
@@ -497,9 +498,11 @@ html.dark .badge-info{background:rgba(37,99,235,.2)}
           <button class="btn btn-out btn-sm" onclick="testSupabaseConnection()"><i class="fas fa-wifi"></i> Test Connection</button>
         </div>
         <details style="margin-top:14px">
-          <summary style="cursor:pointer;font-weight:600;font-size:.84rem;color:var(--pri)"><i class="fas fa-code"></i> Supabase Setup SQL</summary>
-          <div class="sql-code">-- Run this SQL in your Supabase SQL Editor to create all tables
+          <summary style="cursor:pointer;font-weight:600;font-size:.84rem;color:var(--pri)"><i class="fas fa-code"></i> Updated Supabase Setup SQL (with RLS)</summary>
+          <div class="sql-code">-- Run this SQL in your Supabase SQL Editor to create all tables with secure RLS policies
+-- =============================================================================
 
+-- Create tables (same as before)
 CREATE TABLE residents (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -612,7 +615,7 @@ CREATE TABLE notices (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security
+-- Enable Row Level Security on all tables
 ALTER TABLE residents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE checkins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE checkouts ENABLE ROW LEVEL SECURITY;
@@ -624,24 +627,48 @@ ALTER TABLE power_utilities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE water_utilities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notices ENABLE ROW LEVEL SECURITY;
 
--- Policies: Allow all operations with anon key (adjust for production)
-CREATE POLICY "allow_all" ON residents FOR ALL USING (true);
-CREATE POLICY "allow_all" ON checkins FOR ALL USING (true);
-CREATE POLICY "allow_all" ON checkouts FOR ALL USING (true);
-CREATE POLICY "allow_all" ON rules_acceptance FOR ALL USING (true);
-CREATE POLICY "allow_all" ON payments FOR ALL USING (true);
-CREATE POLICY "allow_all" ON incidents FOR ALL USING (true);
-CREATE POLICY "allow_all" ON maintenance FOR ALL USING (true);
-CREATE POLICY "allow_all" ON power_utilities FOR ALL USING (true);
-CREATE POLICY "allow_all" ON water_utilities FOR ALL USING (true);
-CREATE POLICY "allow_all" ON notices FOR ALL USING (true);</div>
+-- ✅ SECURE POLICIES: Only authenticated users can perform operations
+-- (Replace the old "allow_all" policies with these)
+
+CREATE POLICY "authenticated can do all" ON residents
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON checkins
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON checkouts
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON rules_acceptance
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON payments
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON incidents
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON maintenance
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON power_utilities
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON water_utilities
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated can do all" ON notices
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- (Optional) For more granular control, you can create separate policies for SELECT/INSERT/UPDATE/DELETE.
+-- The above gives full access to any authenticated user (ideal for a single admin).</div>
         </details>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ===== MODALS ===== -->
+<!-- ===== MODALS (unchanged) ===== -->
 <div class="modal-overlay" id="addResidentModal"><div class="modal">
   <div class="modal-h"><span><i class="fas fa-user-plus"></i> Add Resident</span><button class="modal-close" onclick="closeModal('addResidentModal')">&times;</button></div>
   <form onsubmit="return addResidentManual(event)">
